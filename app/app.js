@@ -11,6 +11,7 @@ const generateBtn = document.getElementById("generateBtn");
 const stats = document.getElementById("stats");
 const downloadQr = document.getElementById("downloadQr");
 const downloadPayload = document.getElementById("downloadPayload");
+const qrPanel = document.querySelector(".qr-panel");
 
 const state = {
   file: null,
@@ -33,6 +34,19 @@ function revokeUrl(url) {
   if (url) {
     URL.revokeObjectURL(url);
   }
+}
+
+function fitQrCanvas() {
+  const panelWidth = qrPanel?.clientWidth ?? 256;
+  const displaySize = Math.max(192, Math.min(320, Math.floor(panelWidth)));
+  const backingSize = Math.max(256, Math.min(640, Math.floor(displaySize * window.devicePixelRatio)));
+
+  qrCanvas.width = backingSize;
+  qrCanvas.height = backingSize;
+  qrCanvas.style.width = `${displaySize}px`;
+  qrCanvas.style.height = `${displaySize}px`;
+
+  return backingSize;
 }
 
 function canvasToBlob(canvas, mimeType, qualityValue) {
@@ -88,9 +102,11 @@ function blobToDataUrl(blob) {
 }
 
 async function renderQr(payload) {
+  const size = fitQrCanvas();
   const qrOptions = {
     errorCorrectionLevel: "L",
     margin: 2,
+    width: size,
     color: {
       dark: "#0b1020",
       light: "#ffffff",
@@ -203,6 +219,8 @@ photoInput.addEventListener("change", async (event) => {
 maxSize.addEventListener("input", updateSliders);
 quality.addEventListener("input", updateSliders);
 generateBtn.addEventListener("click", generatePayload);
+window.addEventListener("resize", fitQrCanvas);
 
 updateSliders();
+fitQrCanvas();
 setStatus("画像を選ぶと、縮小してQR化できます。");
