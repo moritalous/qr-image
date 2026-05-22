@@ -47,6 +47,23 @@ function fitQrCanvas() {
   return backingSize;
 }
 
+let resizeFrame = 0;
+
+function scheduleQrRedraw() {
+  if (!state.payload) {
+    return;
+  }
+
+  cancelAnimationFrame(resizeFrame);
+  resizeFrame = requestAnimationFrame(async () => {
+    try {
+      await renderQr(state.payload);
+    } catch (error) {
+      setStatus(`QRの再描画に失敗しました: ${error.message}`);
+    }
+  });
+}
+
 function canvasToBlob(canvas, mimeType, qualityValue) {
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), mimeType, qualityValue);
@@ -217,7 +234,7 @@ photoInput.addEventListener("change", async (event) => {
 maxSize.addEventListener("input", updateSliders);
 quality.addEventListener("input", updateSliders);
 generateBtn.addEventListener("click", generatePayload);
-window.addEventListener("resize", fitQrCanvas);
+window.addEventListener("resize", scheduleQrRedraw);
 
 updateSliders();
 fitQrCanvas();
