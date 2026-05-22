@@ -174,7 +174,7 @@ figure img {
   overflow: auto;
 }
 
-.qr-panel canvas {
+.qr-panel svg {
   width: auto !important;
   height: auto !important;
   display: block;

@@ -17,6 +17,7 @@ const state = {
   file: null,
   sourceUrl: "",
   payload: "",
+  qrUrl: "",
 };
 
 const qualityLabel = () => `${quality.value}%`;
@@ -38,24 +39,15 @@ function revokeUrl(url) {
 
 function fitQrCanvas() {
   const panelWidth = qrPanel?.clientWidth ?? 256;
-  const displaySize = Math.max(192, Math.min(320, Math.floor(panelWidth)));
-  const backingSize = Math.max(256, Math.min(640, Math.floor(displaySize * window.devicePixelRatio)));
-
-  qrCanvas.width = backingSize;
-  qrCanvas.height = backingSize;
-
-  return backingSize;
+  return Math.max(256, Math.min(640, Math.floor(panelWidth * window.devicePixelRatio)));
 }
-
-let resizeFrame = 0;
 
 function scheduleQrRedraw() {
   if (!state.payload) {
     return;
   }
 
-  cancelAnimationFrame(resizeFrame);
-  resizeFrame = requestAnimationFrame(async () => {
+  requestAnimationFrame(async () => {
     try {
       await renderQr(state.payload);
     } catch (error) {
@@ -128,7 +120,9 @@ async function renderQr(payload) {
     },
   };
 
-  await QRCode.toCanvas(qrCanvas, payload, qrOptions);
+  const svg = await QRCode.toString(payload, { ...qrOptions, type: "svg" });
+  qrCanvas.innerHTML = svg;
+  return svg;
 }
 
 async function generatePayload() {
@@ -166,7 +160,7 @@ async function generatePayload() {
         });
         try {
           const payload = candidate.dataUrl;
-          await renderQr(payload);
+          const svg = await renderQr(payload);
           state.payload = payload;
           tinyPreview.src = candidate.dataUrl;
           const bytes = candidate.blob.size;
@@ -179,13 +173,15 @@ async function generatePayload() {
               `設定: max ${dim}px / quality ${(q * 100).toFixed(0)}%`,
             ].join("\n")
           );
-          const qrBlob = await new Promise((resolve) => qrCanvas.toBlob(resolve, "image/png"));
-          if (qrBlob) {
-            downloadQr.href = URL.createObjectURL(qrBlob);
-          }
+          revokeUrl(state.qrUrl);
+          state.qrUrl = URL.createObjectURL(
+            new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
+          );
+          downloadQr.href = state.qrUrl;
           downloadPayload.href = URL.createObjectURL(
             new Blob([payload], { type: "text/plain;charset=utf-8" })
           );
+          downloadQr.download = "photo-qr.svg";
           return;
         } catch (error) {
           continue;
