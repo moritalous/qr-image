@@ -17,7 +17,6 @@ const state = {
   file: null,
   sourceUrl: "",
   payload: "",
-  qrUrl: "",
 };
 
 const qualityLabel = () => `${quality.value}%`;
@@ -39,21 +38,13 @@ function revokeUrl(url) {
 
 function fitQrCanvas() {
   const panelWidth = qrPanel?.clientWidth ?? 256;
-  return Math.max(256, Math.min(640, Math.floor(panelWidth * window.devicePixelRatio)));
-}
+  const displaySize = Math.max(192, Math.min(320, Math.floor(panelWidth)));
+  const backingSize = Math.max(256, Math.min(640, Math.floor(displaySize * window.devicePixelRatio)));
 
-function scheduleQrRedraw() {
-  if (!state.payload) {
-    return;
-  }
+  qrCanvas.width = backingSize;
+  qrCanvas.height = backingSize;
 
-  requestAnimationFrame(async () => {
-    try {
-      await renderQr(state.payload);
-    } catch (error) {
-      setStatus(`QRの再描画に失敗しました: ${error.message}`);
-    }
-  });
+  return backingSize;
 }
 
 function canvasToBlob(canvas, mimeType, qualityValue) {
@@ -120,8 +111,6 @@ async function renderQr(payload) {
     },
   };
 
-  qrCanvas.width = size;
-  qrCanvas.height = size;
   await QRCode.toCanvas(qrCanvas, payload, qrOptions);
 }
 
@@ -175,10 +164,7 @@ async function generatePayload() {
           );
           const qrBlob = await new Promise((resolve) => qrCanvas.toBlob(resolve, "image/png"));
           if (qrBlob) {
-            revokeUrl(state.qrUrl);
-            state.qrUrl = URL.createObjectURL(qrBlob);
-            downloadQr.href = state.qrUrl;
-            downloadQr.download = "photo-qr.png";
+            downloadQr.href = URL.createObjectURL(qrBlob);
           }
           downloadPayload.href = URL.createObjectURL(
             new Blob([payload], { type: "text/plain;charset=utf-8" })
@@ -231,7 +217,7 @@ photoInput.addEventListener("change", async (event) => {
 maxSize.addEventListener("input", updateSliders);
 quality.addEventListener("input", updateSliders);
 generateBtn.addEventListener("click", generatePayload);
-window.addEventListener("resize", scheduleQrRedraw);
+window.addEventListener("resize", fitQrCanvas);
 
 updateSliders();
 fitQrCanvas();
