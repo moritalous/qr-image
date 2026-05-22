@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Photo to QR</title>
+    <meta
+      name="description"
+      content="スマホで撮った写真を極小に縮小して、1枚のQRコードに詰め込む試作アプリ"
+    />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Photo to QR</p>
+        <h1>撮った写真を、縮めて、QRにする。</h1>
+        <p class="lede">
+          スマホのカメラで撮った画像をできるだけ小さく圧縮し、1枚のQRコードに詰め込みます。
+          写真そのものは無理でも、極小サムネイルなら狙えます。
+        </p>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <div class="card-head">
+            <h2>1. 画像を選ぶ</h2>
+            <p>スマホならカメラが開きます。</p>
+          </div>
+
+          <label class="file-drop" for="photoInput">
+            <span class="file-drop__title">写真を読み込む</span>
+            <span class="file-drop__hint">タップして撮影または選択</span>
+            <input
+              id="photoInput"
+              type="file"
+              accept="image/*"
+              capture="environment"
+            />
+          </label>
+
+          <div class="controls">
+            <label>
+              最大サイズ
+              <input id="maxSize" type="range" min="16" max="128" step="4" value="48" />
+              <span id="maxSizeValue">48px</span>
+            </label>
+
+            <label>
+              画像形式
+              <select id="format">
+                <option value="image/jpeg" selected>JPEG</option>
+                <option value="image/webp">WebP</option>
+                <option value="image/png">PNG</option>
+              </select>
+            </label>
+
+            <label>
+              品質
+              <input id="quality" type="range" min="10" max="100" step="5" value="55" />
+              <span id="qualityValue">55%</span>
+            </label>
+          </div>
+
+          <div class="preview-row">
+            <figure>
+              <figcaption>元画像</figcaption>
+              <img id="sourcePreview" alt="" />
+            </figure>
+            <figure>
+              <figcaption>縮小結果</figcaption>
+              <img id="tinyPreview" alt="" />
+            </figure>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h2>2. QRを作る</h2>
+            <p>容量に収まるまで自動で小さくします。</p>
+          </div>
+
+          <button id="generateBtn" class="primary">QRを生成</button>
+
+          <div class="stats" id="stats">
+            <span>待機中</span>
+          </div>
+
+          <div class="qr-panel">
+            <canvas id="qrCanvas" width="640" height="640" aria-label="生成されたQRコード"></canvas>
+          </div>
+
+          <div class="actions">
+            <a id="downloadQr" class="secondary" download="photo-qr.png" href="#">QRを保存</a>
+            <a id="downloadPayload" class="ghost" download="payload.txt" href="#">中身を保存</a>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
