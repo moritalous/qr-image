@@ -174,12 +174,13 @@ figure img {
   overflow: auto;
 }
 
-.qr-panel svg {
-  width: auto !important;
-  height: auto !important;
+.qr-panel img {
+  width: 100% !important;
+  height: 100% !important;
   display: block;
-  max-width: none;
-  max-height: none;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
   background: #fff;
 }
 

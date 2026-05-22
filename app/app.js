@@ -121,7 +121,11 @@ async function renderQr(payload) {
   };
 
   const svg = await QRCode.toString(payload, { ...qrOptions, type: "svg" });
-  qrCanvas.innerHTML = svg;
+  revokeUrl(state.qrUrl);
+  state.qrUrl = URL.createObjectURL(
+    new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
+  );
+  qrCanvas.src = state.qrUrl;
   return svg;
 }
 
@@ -172,10 +176,6 @@ async function generatePayload() {
               `サイズ: ${bytes} bytes`,
               `設定: max ${dim}px / quality ${(q * 100).toFixed(0)}%`,
             ].join("\n")
-          );
-          revokeUrl(state.qrUrl);
-          state.qrUrl = URL.createObjectURL(
-            new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
           );
           downloadQr.href = state.qrUrl;
           downloadPayload.href = URL.createObjectURL(
