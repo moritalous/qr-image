@@ -174,13 +174,10 @@ figure img {
   overflow: auto;
 }
 
-.qr-panel img {
+.qr-panel canvas {
   width: 100% !important;
   height: 100% !important;
   display: block;
-  object-fit: contain;
-  max-width: 100%;
-  max-height: 100%;
   background: #fff;
 }
 

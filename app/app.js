@@ -120,13 +120,9 @@ async function renderQr(payload) {
     },
   };
 
-  const svg = await QRCode.toString(payload, { ...qrOptions, type: "svg" });
-  revokeUrl(state.qrUrl);
-  state.qrUrl = URL.createObjectURL(
-    new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
-  );
-  qrCanvas.src = state.qrUrl;
-  return svg;
+  qrCanvas.width = size;
+  qrCanvas.height = size;
+  await QRCode.toCanvas(qrCanvas, payload, qrOptions);
 }
 
 async function generatePayload() {
@@ -164,7 +160,7 @@ async function generatePayload() {
         });
         try {
           const payload = candidate.dataUrl;
-          const svg = await renderQr(payload);
+          await renderQr(payload);
           state.payload = payload;
           tinyPreview.src = candidate.dataUrl;
           const bytes = candidate.blob.size;
@@ -177,11 +173,16 @@ async function generatePayload() {
               `設定: max ${dim}px / quality ${(q * 100).toFixed(0)}%`,
             ].join("\n")
           );
-          downloadQr.href = state.qrUrl;
+          const qrBlob = await new Promise((resolve) => qrCanvas.toBlob(resolve, "image/png"));
+          if (qrBlob) {
+            revokeUrl(state.qrUrl);
+            state.qrUrl = URL.createObjectURL(qrBlob);
+            downloadQr.href = state.qrUrl;
+            downloadQr.download = "photo-qr.png";
+          }
           downloadPayload.href = URL.createObjectURL(
             new Blob([payload], { type: "text/plain;charset=utf-8" })
           );
-          downloadQr.download = "photo-qr.svg";
           return;
         } catch (error) {
           continue;
