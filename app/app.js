@@ -43,8 +43,6 @@ function fitQrCanvas() {
 
   qrCanvas.width = backingSize;
   qrCanvas.height = backingSize;
-  qrCanvas.style.width = `${displaySize}px`;
-  qrCanvas.style.height = `${displaySize}px`;
 
   return backingSize;
 }
