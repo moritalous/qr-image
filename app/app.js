@@ -16,7 +16,9 @@ const qrPanel = document.querySelector(".qr-panel");
 const state = {
   file: null,
   sourceUrl: "",
-  payload: "",
+  payloadSegments: null,
+  payloadUrl: "",
+  qrUrl: "",
 };
 
 const qualityLabel = () => `${quality.value}%`;
@@ -45,6 +47,20 @@ function fitQrCanvas() {
   qrCanvas.height = backingSize;
 
   return backingSize;
+}
+
+function scheduleQrRedraw() {
+  if (!state.payloadSegments) {
+    return;
+  }
+
+  requestAnimationFrame(async () => {
+    try {
+      await renderQr(state.payloadSegments);
+    } catch (error) {
+      setStatus(`QRの再描画に失敗しました: ${error.message}`);
+    }
+  });
 }
 
 function canvasToBlob(canvas, mimeType, qualityValue) {
@@ -142,33 +158,39 @@ async function generatePayload() {
     for (let dim = maxDimension; dim >= 16; dim -= 4) {
       for (const q of [qualityValue, 0.5, 0.4, 0.3, 0.2]) {
         const candidate = await resizeImage(image, dim, mimeType, q);
+        const bytes = new Uint8ClampedArray(await candidate.blob.arrayBuffer());
+        const segments = [{ data: bytes, mode: "byte" }];
         candidates.push({
           ...candidate,
           dim,
           quality: q,
+          segments,
         });
         try {
-          const payload = candidate.dataUrl;
-          await renderQr(payload);
-          state.payload = payload;
+          await renderQr(segments);
+          state.payloadSegments = segments;
           tinyPreview.src = candidate.dataUrl;
-          const bytes = candidate.blob.size;
           setStatus(
             [
               `QR化に成功しました`,
               `縮小後: ${candidate.width} x ${candidate.height}`,
               `形式: ${mimeType.replace("image/", "").toUpperCase()}`,
-              `サイズ: ${bytes} bytes`,
+              `サイズ: ${bytes.length} bytes`,
               `設定: max ${dim}px / quality ${(q * 100).toFixed(0)}%`,
             ].join("\n")
           );
           const qrBlob = await new Promise((resolve) => qrCanvas.toBlob(resolve, "image/png"));
           if (qrBlob) {
-            downloadQr.href = URL.createObjectURL(qrBlob);
+            revokeUrl(state.qrUrl);
+            state.qrUrl = URL.createObjectURL(qrBlob);
+            downloadQr.href = state.qrUrl;
+            downloadQr.download = "photo-qr.png";
           }
-          downloadPayload.href = URL.createObjectURL(
-            new Blob([payload], { type: "text/plain;charset=utf-8" })
-          );
+          revokeUrl(state.payloadUrl);
+          state.payloadUrl = URL.createObjectURL(candidate.blob);
+          downloadPayload.href = state.payloadUrl;
+          const ext = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1];
+          downloadPayload.download = `payload.${ext}`;
           return;
         } catch (error) {
           continue;
@@ -217,7 +239,7 @@ photoInput.addEventListener("change", async (event) => {
 maxSize.addEventListener("input", updateSliders);
 quality.addEventListener("input", updateSliders);
 generateBtn.addEventListener("click", generatePayload);
-window.addEventListener("resize", fitQrCanvas);
+window.addEventListener("resize", scheduleQrRedraw);
 
 updateSliders();
 fitQrCanvas();
